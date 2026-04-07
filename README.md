@@ -2,6 +2,7 @@
 
 A lightweight, local AI memory system for GitHub Copilot + VS Code.
 No cloud. No LLM at write-time. Zero token cost on every commit.
+Adapted from [Karpathy's LLM Knowledge Base](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) architecture.
 
 ---
 
