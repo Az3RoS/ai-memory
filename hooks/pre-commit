@@ -16,8 +16,11 @@ fi
 
 PROJECT=""
 
+# Use py launcher on Windows, fall back to python3 on Unix
+PY="$(command -v py 2>/dev/null || command -v python3 2>/dev/null || echo python3)"
+
 # Regenerate CONTEXT.md — silent failure
-python3 "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
+"$PY" "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
 
 # Stage ai-memory files if they changed
 if [ -d "$REPO_ROOT/.ai-memory" ]; then

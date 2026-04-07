@@ -22,7 +22,10 @@ fi
 # Project slug — auto-detected from .ai-memory/index.json or repo name
 PROJECT=""
 
+# Use py launcher on Windows, fall back to python3 on Unix
+PY="$(command -v py 2>/dev/null || command -v python3 2>/dev/null || echo python3)"
+
 # Run silently — failures must never block git
-python3 "$MEMORY_CLI" ingest --project "$PROJECT" 2>/dev/null || true
-python3 "$MEMORY_CLI" log    --project "$PROJECT" 2>/dev/null || true
-python3 "$MEMORY_CLI" graph  --project "$PROJECT" 2>/dev/null || true
+"$PY" "$MEMORY_CLI" ingest --project "$PROJECT" 2>/dev/null || true
+"$PY" "$MEMORY_CLI" log    --project "$PROJECT" 2>/dev/null || true
+"$PY" "$MEMORY_CLI" graph  --project "$PROJECT" 2>/dev/null || true
