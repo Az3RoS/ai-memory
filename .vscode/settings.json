@@ -1,0 +1,38 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".ai-memory/CONTEXT.md"
+    }
+  ],
+
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "file": ".ai-memory/CONTEXT.md"
+    }
+  ],
+
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Use conventional commits format: type(scope): description. Types: feat, fix, refactor, docs, test, chore. Keep subject under 72 chars."
+    }
+  ],
+
+  "files.associations": {
+    "CONTEXT.md":   "markdown",
+    "decisions.md": "markdown"
+  },
+
+  "files.watcherExclude": {
+    "**/.ai-memory/**.db": true,
+    "**/.ai-memory/**.db-wal": true,
+    "**/.ai-memory/**.db-shm": true
+  },
+
+  "search.exclude": {
+    "**/.ai-memory/index.json": false
+  },
+
+  "editor.tokenColorCustomizations": {
+    "textMateRules": []
+  }
+}

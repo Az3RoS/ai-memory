@@ -1,0 +1,29 @@
+// ai-memory keyboard shortcuts
+// Copy these into your VS Code keybindings.json
+// Open with: Ctrl+Shift+P → "Preferences: Open Keyboard Shortcuts (JSON)"
+[
+  {
+    "key":     "ctrl+shift+m q",
+    "command": "workbench.action.tasks.runTask",
+    "args":    "memory: query",
+    "when":    "editorFocus"
+  },
+  {
+    "key":     "ctrl+shift+m l",
+    "command": "workbench.action.tasks.runTask",
+    "args":    "memory: log note",
+    "when":    "editorFocus"
+  },
+  {
+    "key":     "ctrl+shift+m s",
+    "command": "workbench.action.tasks.runTask",
+    "args":    "memory: show context",
+    "when":    "editorFocus"
+  },
+  {
+    "key":     "ctrl+shift+m y",
+    "command": "workbench.action.tasks.runTask",
+    "args":    "memory: sync to repo",
+    "when":    "editorFocus"
+  }
+]
