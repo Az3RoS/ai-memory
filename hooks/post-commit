@@ -1,0 +1,28 @@
+#!/bin/sh
+# ============================================================
+# ai-memory — post-commit hook
+# ============================================================
+# Installation:
+#   cp hooks/post-commit .git/hooks/post-commit
+#   chmod +x .git/hooks/post-commit
+#
+# Or run: python3 scripts/memory_cli.py init --project <slug>
+# ============================================================
+set -e
+
+# Resolve script location relative to repo root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+
+# Fallback to global install if not in repo scripts/
+if [ ! -f "$MEMORY_CLI" ]; then
+  MEMORY_CLI="$HOME/.ai-memory/scripts/memory_cli.py"
+fi
+
+# Project slug — auto-detected from .ai-memory/index.json or repo name
+PROJECT=""
+
+# Run silently — failures must never block git
+python3 "$MEMORY_CLI" ingest --project "$PROJECT" 2>/dev/null || true
+python3 "$MEMORY_CLI" log    --project "$PROJECT" 2>/dev/null || true
+python3 "$MEMORY_CLI" graph  --project "$PROJECT" 2>/dev/null || true
