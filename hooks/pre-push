@@ -1,0 +1,16 @@
+#!/bin/sh
+# ai-memory pre-push hook — advisory review before push
+# Installed by: setup.py
+# NEVER blocks the push — all operations use || true
+
+MEMORY_CLI="{memory_cli}"
+PROJECT="{project}"
+
+# Run pre-push review (prints advisory to terminal)
+python3 "$MEMORY_CLI" review --project "$PROJECT" 2>/dev/null || true
+
+# Generate PR description
+python3 "$MEMORY_CLI" pr-context --project "$PROJECT" 2>/dev/null || true
+
+# Exit 0 always — never block the push
+exit 0

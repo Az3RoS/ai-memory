@@ -34,5 +34,8 @@
 
   "editor.tokenColorCustomizations": {
     "textMateRules": []
-  }
+  },
+  "python.analysis.extraPaths": [
+    "./scripts"
+  ]
 }

@@ -1,0 +1,28 @@
+# Spec: {feature_name}
+**Status:** active
+**Created:** {date}
+**Author:** {author}
+
+## Problem
+{problem_statement}
+
+## Solution
+{solution_description}
+
+## Success criteria
+- [ ] {criterion_1}
+- [ ] {criterion_2}
+- [ ] {criterion_3}
+
+## Decisions made
+<!-- Record any architectural decisions here.
+     Also add them to .ai-memory/decisions.md with a dated commit message. -->
+
+## Out of scope
+<!-- Explicitly list what this spec does NOT cover. -->
+
+## Implementation notes
+<!-- Technical notes, patterns to follow, file structure, risks. -->
+
+## References
+<!-- Links to related decisions, specs, issues, or external docs. -->

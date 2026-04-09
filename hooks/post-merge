@@ -1,0 +1,12 @@
+#!/bin/sh
+# ai-memory post-merge hook — refresh CONTEXT.md after pull/merge
+# Installed by: setup.py
+# Silent — never interferes with git operations
+
+MEMORY_CLI="{memory_cli}"
+PROJECT="{project}"
+
+# Refresh CONTEXT.md to incorporate pulled decisions/patterns
+python3 "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
+
+exit 0

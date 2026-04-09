@@ -1,0 +1,51 @@
+# Python Coding Guidelines
+
+<!-- Edit this file directly. Committed to git and shared with the team. -->
+
+## Style
+- Follow PEP 8
+- Max line length: 100 characters
+- Use type hints on all public functions
+- Docstrings: Google style for public APIs
+
+## Naming
+- Functions/methods: snake_case
+- Classes: PascalCase
+- Constants: UPPER_SNAKE_CASE
+- Private members: _single_leading_underscore
+
+## Imports
+- Standard library first, then third-party, then local
+- No wildcard imports (`from x import *`)
+- Absolute imports preferred
+
+## Functions
+- Keep functions ≤ 40 lines
+- Single responsibility
+- Early returns over nested if/else
+
+## Error handling
+- Use specific exceptions, not bare `except`
+- Never `except: pass` — at minimum `except Exception as e: logger.error(...)`
+- Raise ValueError for bad inputs, RuntimeError for unexpected states
+
+## Async
+- All I/O should be async if the codebase is async
+- Never mix sync and async without explicit bridging
+- Use `async with` for context managers, not raw await
+
+## Testing (pytest)
+- Test files in tests/ directory, mirroring src/ structure
+- Use fixtures for setup/teardown
+- Mock external services, never real network calls in unit tests
+- Parametrize for multiple input cases
+
+## SQLAlchemy (if used)
+- Use `async with session_maker() as session` — never raw session
+- No lazy loading in async context
+- Migrations via Alembic — never ALTER TABLE manually
+
+## Logging
+- Use `logging.getLogger(__name__)`
+- No `print()` in production code
+- Log at appropriate levels: DEBUG/INFO/WARNING/ERROR/CRITICAL

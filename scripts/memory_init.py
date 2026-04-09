@@ -16,8 +16,15 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import stat
+import sys
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 from memory_config import Config
 
@@ -150,9 +157,8 @@ def init_project(cfg: Config, slug: str, repo_path: str):
 
     # 6. Install git hooks
     hooks_dir = repo / ".git" / "hooks"
+    memory_cli = str(Path(__file__).parent / "memory_cli.py")
     if hooks_dir.exists():
-        memory_cli = str(Path(__file__).parent / "memory_cli.py")
-
         _install_hook(
             hooks_dir, "post-commit",
             POST_COMMIT_HOOK.format(memory_cli=memory_cli, project=slug),
@@ -161,11 +167,41 @@ def init_project(cfg: Config, slug: str, repo_path: str):
             hooks_dir, "pre-commit",
             PRE_COMMIT_HOOK.format(memory_cli=memory_cli, project=slug),
         )
+        # Install pre-push and post-merge if templates exist
+        hooks_src = Path(__file__).parent.parent / "hooks"
+        for hook_name in ("pre-push", "post-merge"):
+            hook_src = hooks_src / hook_name
+            if hook_src.exists():
+                _install_hook(
+                    hooks_dir, hook_name,
+                    hook_src.read_text(encoding="utf-8").replace(
+                        "{memory_cli}", memory_cli
+                    ).replace("{project}", slug),
+                )
     else:
-        print(f"  [warn] .git/hooks not found at {hooks_dir} — hooks not installed")
+        print(f"  [warn] .git/hooks not found at {hooks_dir} - hooks not installed")
 
-    print(f"  ✓ global registry updated")
-    print(f"  ✓ {mem_dir} created")
-    print(f"  ✓ .gitignore patched")
+    # 7. Copy skills directory
+    skills_src = Path(__file__).parent.parent / "skills"
+    if skills_src.exists():
+        skills_dst = mem_dir / "skills"
+        skills_dst.mkdir(exist_ok=True)
+        for skill_file in skills_src.glob("*.md"):
+            shutil.copy2(skill_file, skills_dst / skill_file.name)
+
+    # 8. Generate IDE pointer files
+    try:
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from pointers import generate_pointers
+        template_path = Path(__file__).parent.parent / "templates" / "pointer.md.template"
+        generate_pointers(repo, template_path=template_path, verbose=False)
+    except Exception:
+        pass  # pointers are optional at init time
+
+    print("  [ok] global registry updated")
+    print(f"  [ok] {mem_dir} created")
+    print("  [ok] .gitignore patched")
     if hooks_dir.exists():
-        print(f"  ✓ git hooks installed")
+        print("  [ok] git hooks installed")
+    print("  [ok] IDE pointer files generated")

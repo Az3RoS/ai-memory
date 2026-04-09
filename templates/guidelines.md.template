@@ -1,0 +1,38 @@
+# Coding Guidelines
+
+<!-- Edit this file directly. It is committed to git and shared with the team. -->
+<!-- ai-memory reads this file to enforce standards in pre-push reviews. -->
+
+## Naming conventions
+- Functions: snake_case
+- Classes: PascalCase
+- Constants: UPPER_SNAKE_CASE
+- Files: snake_case (Python) / kebab-case (TypeScript/JavaScript)
+
+## Code structure
+- Keep functions small (< 40 lines as a guide)
+- One responsibility per function
+- Prefer explicit over implicit
+
+## Comments
+- Comment WHY, not WHAT
+- No commented-out code in commits
+- TODO comments must include a ticket/issue reference
+
+## Error handling
+- Handle errors at the boundary — don't swallow silently
+- Log errors with context (not just `except: pass`)
+
+## Testing
+- New features require tests
+- Bug fixes require a regression test
+- Test files mirror the source file structure
+
+## Git commits
+- Use conventional commits: feat/fix/docs/refactor/test/chore
+- Commit message subject: imperative mood, ≤ 72 characters
+- Decisions in commit body: use "decided", "chose", "switched" keywords
+
+## Dependencies
+- No new dependencies without team discussion
+- Prefer stdlib/built-in over third-party where practical

@@ -1,0 +1,20 @@
+# Session directives
+- Short sentences. 8-10 words max.
+- No filler. No preamble. Tool-first.
+- Read .ai-memory/CONTEXT.md before every task.
+- Respect existing decisions. Reference by [date].
+- Check blockers before suggesting workarounds.
+- Follow .ai-memory/guidelines.md for coding standards.
+
+# Project context
+Read .ai-memory/CONTEXT.md for decisions, patterns, blockers, and recent activity.
+
+# Skills (read the file when the topic comes up)
+- Code review / PR / quality check → .ai-memory/skills/review.md
+- Coding guidelines / standards / rules → .ai-memory/skills/guidelines.md
+- Feature spec / requirement / planning → .ai-memory/skills/spec.md
+- General help / how do I / show me → .ai-memory/skills/help.md
+- New feature / implement / add → .ai-memory/skills/feature.md
+- Bug / fix / error / failing → .ai-memory/skills/debug.md
+- Onboard / new developer / getting started → .ai-memory/skills/onboard.md
+- Sprint / summary / retro → .ai-memory/skills/sprint.md

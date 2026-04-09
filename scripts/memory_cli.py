@@ -3,23 +3,29 @@
 ai-memory: unified CLI for the AI memory system.
 
 Usage:
-    memory_cli.py ingest   [--project <slug>] [--message <msg>]
-    memory_cli.py query    <search_terms>     [--project <slug>] [--limit <n>] [--format context|json]
-    memory_cli.py log      [--project <slug>] [--message <msg>]
-    memory_cli.py sync     [--project <slug>]
-    memory_cli.py context  [--project <slug>] [--tokens <budget>]
-    memory_cli.py graph    [--project <slug>]
-    memory_cli.py init     --project <slug>   --repo <path>
+    memory_cli.py ingest     [--project <slug>] [--message <msg>]
+    memory_cli.py query      <search_terms>     [--project <slug>] [--limit <n>] [--format context|json]
+    memory_cli.py log        [--project <slug>] [--message <msg>]
+    memory_cli.py sync       [--project <slug>]
+    memory_cli.py context    [--project <slug>] [--tokens <budget>]
+    memory_cli.py graph      [--project <slug>]
+    memory_cli.py init       --project <slug>   --repo <path>
     memory_cli.py status
+    memory_cli.py backfill   [--project <slug>] [--limit <n>] [--force]
+    memory_cli.py review     [--project <slug>]
+    memory_cli.py pr-context [--project <slug>]
 """
 
 import argparse
 import sys
 import os
-import io
 
-if sys.stdout.encoding is None or sys.stdout.encoding.lower() != "utf-8":
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf=8", errors="replace")
+# Reconfigure stdout to UTF-8 so Unicode output works on all terminals
+# (Windows cp1252 terminals would otherwise raise UnicodeEncodeError)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # Ensure package directory is on path when called from hooks
 sys.path.insert(0, os.path.dirname(__file__))
@@ -32,6 +38,9 @@ from memory_sync import sync_to_repo
 from memory_graph import update_graph
 from memory_init import init_project
 from memory_config import Config
+from backfill import backfill as _backfill
+from review import generate_review
+from pr_context import generate_pr_description
 
 
 def cmd_ingest(args, cfg):
@@ -104,15 +113,43 @@ def cmd_status(args, cfg):
         print(f"  {p['slug']:20s}  entries={count:4d}  repo={p.get('repo_path','?')}")
 
 
+def cmd_backfill(args, cfg):
+    project = args.project or cfg.detect_project()
+    store = MemoryStore(cfg.global_db_path())
+    result = _backfill(
+        store, project,
+        limit=args.limit,
+        force=getattr(args, "force", False),
+        verbose=True,
+    )
+    if not result.get("already_done"):
+        sync_to_repo(store, project, cfg)
+        print(f"[memory] backfill complete for project: {project}")
+
+
+def cmd_review(args, cfg):
+    project = args.project or cfg.detect_project()
+    store = MemoryStore(cfg.global_db_path())
+    generate_review(store, project, cfg, verbose=True)
+
+
+def cmd_pr_context(args, cfg):
+    project = args.project or cfg.detect_project()
+    generate_pr_description(project, cfg, verbose=True)
+
+
 COMMANDS = {
-    "ingest":  cmd_ingest,
-    "query":   cmd_query,
-    "log":     cmd_log,
-    "sync":    cmd_sync,
-    "context": cmd_context,
-    "graph":   cmd_graph,
-    "init":    cmd_init,
-    "status":  cmd_status,
+    "ingest":      cmd_ingest,
+    "query":       cmd_query,
+    "log":         cmd_log,
+    "sync":        cmd_sync,
+    "context":     cmd_context,
+    "graph":       cmd_graph,
+    "init":        cmd_init,
+    "status":      cmd_status,
+    "backfill":    cmd_backfill,
+    "review":      cmd_review,
+    "pr-context":  cmd_pr_context,
 }
 
 
@@ -127,10 +164,12 @@ def main():
     parser.add_argument("--project", "-p", help="Project slug")
     parser.add_argument("--repo",    "-r", help="Repo path (init cmd)")
     parser.add_argument("--message", "-m", help="Commit message / note override")
-    parser.add_argument("--limit",   "-l", type=int, default=10)
+    parser.add_argument("--limit",   "-l", type=int, default=200)
     parser.add_argument("--tokens",  "-t", type=int, default=2000,
                         help="Max token budget for context output")
     parser.add_argument("--format",  "-f", choices=["context","json"], default="context")
+    parser.add_argument("--force",   action="store_true",
+                        help="Force re-import (backfill cmd)")
 
     args = parser.parse_args()
     cfg  = Config()

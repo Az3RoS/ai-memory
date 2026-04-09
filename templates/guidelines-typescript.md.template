@@ -1,0 +1,52 @@
+# TypeScript Coding Guidelines
+
+<!-- Edit this file directly. Committed to git and shared with the team. -->
+
+## Style
+- Use TypeScript strict mode (`"strict": true` in tsconfig)
+- No `any` — use `unknown` and narrow explicitly
+- Prefer `const` over `let`, never `var`
+
+## Naming
+- Variables/functions: camelCase
+- Classes/interfaces/types: PascalCase
+- Constants: UPPER_SNAKE_CASE or camelCase (consistent within module)
+- Files: kebab-case
+
+## Types
+- Prefer interfaces over type aliases for objects
+- Use discriminated unions for state machines
+- Export types separately from implementations
+- No implicit `any` — if you can't type it, use `unknown`
+
+## Functions
+- Prefer arrow functions for callbacks
+- Named functions for top-level declarations
+- Avoid callback hell — use async/await
+
+## Async
+- Always `async/await` over raw `.then()` chains
+- Handle errors with try/catch, not `.catch()` swallowing
+- Never `async () => { something(); }` without awaiting the promise
+
+## Imports
+- Named imports preferred over default imports
+- Absolute imports with path aliases (configure in tsconfig)
+- No circular dependencies
+
+## Error handling
+- Use typed error classes: `class AppError extends Error { code: string }`
+- Don't swallow errors: `catch (e) { console.error(e); throw e; }`
+- Return `Result<T, E>` patterns for expected failure paths
+
+## Testing (Jest/Vitest)
+- Test files: `*.test.ts` co-located with source, or in `__tests__/`
+- Mock external services with jest.mock() or vi.mock()
+- Use `describe` blocks to group related tests
+- Test names: "should [behaviour] when [condition]"
+
+## React (if used)
+- Functional components with hooks only
+- Props typed with interfaces
+- No inline function definitions in JSX (extract to named functions)
+- Custom hooks for stateful logic

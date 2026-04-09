@@ -1,0 +1,10 @@
+# ai-memory gitattributes
+# Auto-generated files use "ours" merge strategy to prevent conflicts
+# when multiple developers sync CONTEXT.md simultaneously.
+#
+# Add this to your repo's .gitattributes file.
+
+.ai-memory/CONTEXT.md    merge=ours
+.ai-memory/index.json    merge=ours
+.ai-memory/review.md     merge=ours
+.ai-memory/pr-description.md merge=ours
