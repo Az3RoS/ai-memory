@@ -16,6 +16,10 @@ Usage:
 import argparse
 import sys
 import os
+import io
+
+if sys.stdout.encoding is None or sys.stdout.encoding.lower() != "utf-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf=8", errors="replace")
 
 # Ensure package directory is on path when called from hooks
 sys.path.insert(0, os.path.dirname(__file__))
