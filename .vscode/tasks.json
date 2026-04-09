@@ -5,7 +5,7 @@
       "label": "memory: ingest commit",
       "detail": "Ingest the latest commit into memory (runs automatically via git hook)",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" ingest",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" ingest",
       "group": "none",
       "presentation": { "reveal": "silent", "panel": "shared", "close": true },
       "problemMatcher": []
@@ -14,7 +14,7 @@
       "label": "memory: sync to repo",
       "detail": "Regenerate CONTEXT.md and decisions.md from latest memory",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" sync",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" sync",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
@@ -23,7 +23,7 @@
       "label": "memory: query",
       "detail": "Search memory — you will be prompted for search terms",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" query \"${input:queryTerms}\" --format context",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" query \"${input:queryTerms}\" --format context",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
@@ -32,7 +32,7 @@
       "label": "memory: log note",
       "detail": "Add a manual note to today's daily log",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" log --message \"${input:logNote}\"",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" log --message \"${input:logNote}\"",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
@@ -41,7 +41,7 @@
       "label": "memory: show context",
       "detail": "Print the current CONTEXT.md block — what Copilot sees",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" context",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" context",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
@@ -50,7 +50,7 @@
       "label": "memory: update graph",
       "detail": "Rebuild the knowledge graph from all stored entries",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" graph",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" graph",
       "group": "none",
       "presentation": { "reveal": "silent", "panel": "shared", "close": true },
       "problemMatcher": []
@@ -59,7 +59,7 @@
       "label": "memory: status",
       "detail": "Show all registered projects and entry counts",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" status",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" status",
       "group": "none",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
@@ -68,8 +68,16 @@
       "label": "memory: init project",
       "detail": "Initialise ai-memory for this repo (run once per repo)",
       "type": "shell",
-      "command": "python3 \"${env:HOME}/.ai-memory-system/scripts/memory_cli.py\" init --project \"${input:projectSlug}\" --repo \"${workspaceFolder}\"",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" init --project \"${input:projectSlug}\" --repo \"${workspaceFolder}\"",
       "group": "none",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "memory: fetch context for copilot",
+      "detail": "Query memory db and fetch context",
+      "type": "shell",
+      "command": "python3 ${env:USERPROFILE}/ai-memory-system/scripts/memory_cli.py\" query \"${input:queryTerms}\" --format context",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
     }
