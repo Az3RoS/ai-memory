@@ -26,6 +26,16 @@ PROJECT=""
 PY="$(command -v py 2>/dev/null || command -v python3 2>/dev/null || echo python3)"
 
 # Run silently — failures must never block git
-"$PY" "$MEMORY_CLI" ingest --project "$PROJECT" 2>/dev/null || true
-"$PY" "$MEMORY_CLI" log    --project "$PROJECT" 2>/dev/null || true
-"$PY" "$MEMORY_CLI" graph  --project "$PROJECT" 2>/dev/null || true
+#!/bin/sh
+# ai-memory post-commit hook
+# Calls ingest, sync, scan (incremental), and feature_close
+
+if [ "$AI_MEMORY_RUNNING" = "1" ]; then
+  exit 0
+fi
+export AI_MEMORY_RUNNING=1
+
+python3 scripts/ingest.py 2>/dev/null || true
+python3 scripts/sync.py 2>/dev/null || true
+python3 scripts/scan.py --incremental 2>/dev/null || true
+python3 scripts/feature_close.py 2>/dev/null || true

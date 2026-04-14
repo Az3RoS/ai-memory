@@ -1,0 +1,9 @@
+# Wiki Index
+
+- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [api/endpoints.md](api/endpoints.md)
+- [models/overview.md](models/overview.md)
+- [services/overview.md](services/overview.md)
+- [database/tables.md](database/tables.md)
+- [components/overview.md](components/overview.md)
+- [tests/coverage-map.md](tests/coverage-map.md)

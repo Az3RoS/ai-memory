@@ -155,3 +155,4 @@ def fetch_for_copilot(
     """
     results = query_memory(store, terms, project=project, limit=15)
     return build_context_block(results, token_budget=token_budget, project=project)
+

@@ -1,4 +1,12 @@
 #!/bin/sh
+# ai-memory pre-commit hook
+# Calls utils.py timestamp-scratch
+
+python3 scripts/utils.py timestamp-scratch 2>/dev/null || true
+
+set -e
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+#!/bin/sh
 # ============================================================
 # ai-memory — pre-commit hook
 # ============================================================

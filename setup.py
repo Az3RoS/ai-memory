@@ -36,13 +36,22 @@ if hasattr(sys.stdout, "reconfigure"):
 SCRIPT_DIR = Path(__file__).parent / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from memory_config import Config
-from memory_init import init_project
-from memory_store import MemoryStore
-from memory_sync import sync_to_repo
-from detect import detect_all
-from pointers import generate_pointers
-from backfill import backfill
+
+# Remove legacy imports; use only new modules
+from scripts.db_memory import DBMemory
+from scripts.db_wiki import DBWiki
+from scripts.utils import slugify, estimate_tokens, read_json, write_json
+from scripts.cli import main as cli_main
+from scripts.sync import sync_to_repo
+from scripts.backfill import backfill
+from scripts.pointers import generate_pointers
+from scripts.detect import detect_all
+
+# New imports for updated architecture
+from scripts.db_memory import DBMemory
+from scripts.db_wiki import DBWiki
+from scripts.utils import slugify, estimate_tokens, read_json, write_json
+from scripts.cli import main as cli_main
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -161,7 +170,8 @@ def main():
             print(f"    Monorepo: yes ({mono['type']})")
 
     # ── Step 2: Init or update .ai-memory/ ────────────────────────────────────
-    cfg = Config()
+
+    # Use new DB and utility classes
     mem_dir = repo_root / ".ai-memory"
     already_exists = mem_dir.exists() and (mem_dir / "index.json").exists()
 
@@ -172,12 +182,10 @@ def main():
         else:
             print("  [2/6] Initialising .ai-memory/...")
 
-    if already_exists:
-        # Just update hooks and registry, don't overwrite CONTEXT.md
-        cfg.register_project(project, str(repo_root), token_budget=1500)
-        _reinstall_hooks(repo_root, project, verbose=verbose)
-    else:
-        init_project(cfg, project, str(repo_root))
+    # For now, just ensure .ai-memory exists
+    mem_dir.mkdir(exist_ok=True)
+    # TODO: Replace with new project registry logic if needed
+    _reinstall_hooks(repo_root, project, verbose=verbose)
 
     # ── Step 3: Generate IDE pointer files ────────────────────────────────────
     if verbose:
@@ -195,7 +203,8 @@ def main():
     _copy_skills(repo_root, verbose=verbose)
 
     # ── Step 5: Backfill git history ──────────────────────────────────────────
-    store = MemoryStore(cfg.global_db_path())
+    db_path = Path.home() / ".ai-memory" / "memory.db"
+    db = DBMemory(db_path)
 
     if verbose:
         print()
@@ -203,7 +212,7 @@ def main():
 
     if git["has_history"]:
         result = backfill(
-            store, project,
+            db, project,
             limit=200,
             force=args.rebuild,
             verbose=verbose,
@@ -218,7 +227,7 @@ def main():
         print()
         print(f"  [6/6] Generating CONTEXT.md...")
 
-    sync_to_repo(store, project, cfg)
+    sync_to_repo(db, project, mem_dir)
 
     if verbose:
         print("  [ok] .ai-memory/CONTEXT.md generated")

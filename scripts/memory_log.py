@@ -156,3 +156,4 @@ def write_daily_log(
     log_file = _log_path(cfg, project, dt)
     log_file.write_text(content, encoding="utf-8")
     return log_file
+

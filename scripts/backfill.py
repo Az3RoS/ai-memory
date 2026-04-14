@@ -29,10 +29,9 @@ from typing import Optional
 # Allow running from any directory
 sys.path.insert(0, os.path.dirname(__file__))
 
+from db_memory import DBMemory
 from memory_store import MemoryStore
 from memory_config import Config
-
-# Re-use parsing logic from memory_ingest
 from memory_ingest import _parse_message, _classify_files, _entry_type_from_commit
 
 DECISION_KEYWORDS = re.compile(
@@ -120,7 +119,7 @@ def _already_backfilled(store: MemoryStore, project: str) -> bool:
 
 
 def backfill(
-    store: MemoryStore,
+    db: DBMemory,
     project: str,
     limit: int = 200,
     force: bool = False,
@@ -143,7 +142,7 @@ def backfill(
         print(f"  Scanning git history (up to {limit} commits)...")
 
     # Phase 1: Full ingest of last N commits
-    hashes = _get_commit_hashes(limit)
+    if not force and _already_backfilled(db, project):
     for i, commit_hash in enumerate(hashes):
         detail = _get_commit_detail(commit_hash)
         msg = detail["msg"]

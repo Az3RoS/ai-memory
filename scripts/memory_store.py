@@ -200,3 +200,4 @@ class MemoryStore:
                 if tag:
                     counts[tag] = counts.get(tag, 0) + 1
         return dict(sorted(counts.items(), key=lambda x: -x[1]))
+
