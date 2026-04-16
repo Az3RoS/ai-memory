@@ -181,13 +181,21 @@ def init_project(cfg: Config, slug: str, repo_path: str):
     else:
         print(f"  [warn] .git/hooks not found at {hooks_dir} - hooks not installed")
 
-    # 7. Copy skills directory
+    # 7. Copy skills directory and install to 01-sdlc
     skills_src = Path(__file__).parent.parent / "skills"
     if skills_src.exists():
         skills_dst = mem_dir / "skills"
         skills_dst.mkdir(exist_ok=True)
         for skill_file in skills_src.glob("*.md"):
             shutil.copy2(skill_file, skills_dst / skill_file.name)
+        
+        # Also install to docs/01-sdlc/
+        sdlc_dst = mem_dir / "docs" / "01-sdlc"
+        sdlc_dst.mkdir(parents=True, exist_ok=True)
+        for skill_file in skills_src.glob("*.md"):
+            shutil.copy2(skill_file, sdlc_dst / skill_file.name)
+    else:
+        print(f"  [warn] skills directory not found at {skills_src}")
 
     # 8. Generate IDE pointer files
     try:
