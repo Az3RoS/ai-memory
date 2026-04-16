@@ -65,9 +65,9 @@ def _banner(title: str):
 
 
 def _copy_skills(repo_root: Path, verbose: bool = True):
-    """Copy skills/ from the tool repo to <repo>/.ai-memory/skills/."""
+    """Copy skills/ from the tool repo to <repo>/docs/01-sdlc/."""
     src = Path(__file__).parent / "skills"
-    dst = repo_root / ".ai-memory" / "skills"
+    dst = repo_root / "docs" / "01-sdlc"
 
     if not src.exists():
         if verbose:
@@ -82,7 +82,7 @@ def _copy_skills(repo_root: Path, verbose: bool = True):
         copied += 1
 
     if verbose and copied > 0:
-        print(f"  [ok] copied {copied} skill files to .ai-memory/skills/")
+        print(f"  [ok] copied {copied} skill files to docs/01-sdlc/")
 
 
 def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True):
@@ -239,7 +239,7 @@ def main():
         print()
         print("  [ok] .ai-memory/ initialised")
         print(f"  [ok] {len(written)} IDE pointer files generated")
-        print("  [ok] Skills installed at .ai-memory/skills/")
+        print("  [ok] Skills installed at docs/01-sdlc/")
         if result.get("commits_imported", 0) > 0:
             print(f"  [ok] {result['commits_imported']} commits imported, "
                   f"{result['decisions_found']} decisions found")

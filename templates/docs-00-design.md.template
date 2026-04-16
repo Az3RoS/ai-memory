@@ -1,0 +1,19 @@
+# Design Decisions
+
+## Major Architectural Decisions
+
+### Decision 1
+**Date**: [Date]  
+**Problem**: [What problem did we need to solve?]  
+**Solution**: [What did we decide?]  
+**Rationale**: [Why this choice?]  
+**Alternatives Considered**: [Other options we evaluated]  
+
+### Decision 2
+[Same format as above]
+
+## Known Trade-offs
+[Tradeoffs we've accepted]
+
+## Future Considerations
+[Changes we might make later]

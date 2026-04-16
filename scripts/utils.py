@@ -2,11 +2,48 @@
 utils.py — Shared utility functions for ai-memory
 """
 
+
+import os
+import hashlib
 import json
 import re
 from pathlib import Path
 from datetime import datetime
 from typing import Any
+
+def read_file(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def write_file(path, content):
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+def file_exists(path):
+    return Path(path).exists()
+
+def hash_string(s):
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
+
+def list_files(directory, ext=None):
+    files = []
+    for root, _, filenames in os.walk(directory):
+        for fname in filenames:
+            if ext is None or fname.endswith(ext):
+                files.append(os.path.join(root, fname))
+    return files
+
+def safe_json_loads(s):
+    try:
+        return json.loads(s)
+    except Exception:
+        return None
+
+def safe_json_dumps(obj):
+    try:
+        return json.dumps(obj, ensure_ascii=False, indent=2)
+    except Exception:
+        return ''
 
 def timestamp_scratch_notes(scratch_path: Path):
     """Add timestamps to lines in scratch.md that lack them."""

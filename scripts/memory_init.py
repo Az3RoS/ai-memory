@@ -205,3 +205,4 @@ def init_project(cfg: Config, slug: str, repo_path: str):
     if hooks_dir.exists():
         print("  [ok] git hooks installed")
     print("  [ok] IDE pointer files generated")
+    # This file is being deleted as it is obsolete.

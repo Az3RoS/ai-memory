@@ -1,0 +1,26 @@
+# Definition of Done
+
+## Code Quality
+- [ ] Code reviewed and approved
+- [ ] All tests passing
+- [ ] No breaking changes to existing functionality
+- [ ] Follows project coding standards
+
+## Documentation
+- [ ] Feature/fix documented in feature.md
+- [ ] Code comments added where needed
+- [ ] Updated README or docs if applicable
+
+## Testing
+- [ ] Unit tests written and passing
+- [ ] Integration tests passing
+- [ ] Manual testing completed
+
+## Deployment
+- [ ] Database migrations (if any) tested
+- [ ] Configuration changes documented
+- [ ] Ready for production deployment
+
+## Sign-off
+- [ ] Feature lead approval
+- [ ] QA sign-off (if required)

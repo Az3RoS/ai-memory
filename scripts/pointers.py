@@ -63,14 +63,14 @@ def _load_template(template_path: Optional[Path] = None) -> str:
 Read .ai-memory/CONTEXT.md for decisions, patterns, blockers, and recent activity.
 
 # Skills (read the file when the topic comes up)
-- Code review / PR / quality check → .ai-memory/skills/review.md
-- Coding guidelines / standards / rules → .ai-memory/skills/guidelines.md
-- Feature spec / requirement / planning → .ai-memory/skills/spec.md
-- General help / how do I / show me → .ai-memory/skills/help.md
-- New feature / implement / add → .ai-memory/skills/feature.md
-- Bug / fix / error / failing → .ai-memory/skills/debug.md
-- Onboard / new developer / getting started → .ai-memory/skills/onboard.md
-- Sprint / summary / retro → .ai-memory/skills/sprint.md
+- Code review / PR / quality check → docs/01-sdlc/review.md
+- Coding guidelines / standards / rules → docs/01-sdlc/guidelines.md
+- Feature spec / requirement / planning → docs/01-sdlc/spec.md
+- General help / how do I / show me → docs/01-sdlc/help.md
+- New feature / implement / add → docs/01-sdlc/feature.md
+- Bug / fix / error / failing → docs/01-sdlc/debug.md
+- Onboard / new developer / getting started → docs/01-sdlc/onboard.md
+- Sprint / summary / retro → docs/01-sdlc/sprint.md
 """
 
 

@@ -94,6 +94,96 @@ self-guide.md	Keep
 AI-MEMORY-README.md	Keep
 README.md	Keep
 ARCH.md	Keep (reference doc)
+
+---
+
+## Feature template Integration Plan
+
+### What the reference structure shows (ai-micro-studio/.ai-memory)
+
+The target layout inside any initialized repo's `.ai-memory/` is:
+
+```
+.ai-memory/
+├── CONTEXT.md                          ← auto-generated ambient context (unchanged)
+├── decisions.md                        ← architecture decisions log (unchanged)
+├── index.json                          ← project metadata + counters (extended)
+└── docs/
+    ├── 00-project/                     ← static project docs (human-editable, created at init)
+    │   ├── overview.md
+    │   ├── arch.md
+    │   ├── conventions.md
+    │   └── design.md
+    ├── 01-sdlc/                        ← skill files (AI reads, copied from skills/ at init)
+    │   ├── guidelines.md
+    │   ├── feature.md
+    │   ├── debug.md
+    │   ├── onboard.md
+    │   ├── review.md
+    │   ├── spec.md
+    │   ├── sprint.md
+    │   └── help.md
+    └── 02-feature/                     ← per-feature folders (auto-created on `memory feature`)
+        ├── _templates/                 ← master templates (created at init, never touched by user)
+        │   ├── feature.md
+        │   ├── plan.md
+        │   ├── scratch.md
+        │   ├── test.md
+        │   └── dod.md
+        └── FEAT_001_<slug>/            ← created by `memory feature <name>`
+            ├── feature.md
+            ├── plan.md
+            ├── scratch.md
+            ├── test.md
+            └── dod.md
+```
+
+Key difference from current system: skills go into `docs/01-sdlc/` instead of flat `skills/`.
+Features go into `docs/02-feature/` instead of flat `features/`. This is a numbered,
+purpose-separated layout that matches how the user organises activity in the reference project.
+
+### New/updated templates needed
+
+Template	Status	Action
+templates/docs-00-overview.md.template	Missing	Create — project overview stub
+templates/docs-00-arch.md.template	Missing	Create — architecture stub
+templates/docs-00-conventions.md.template	Missing	Create — conventions stub
+templates/docs-00-design.md.template	Missing	Create — design decisions stub
+templates/docs-02-dod.md.template	Missing	Create — definition of done stub
+templates/feature.md.template	Exists	Reuse as docs/02-feature/_templates/feature.md
+templates/plan.md.template	Exists	Reuse as docs/02-feature/_templates/plan.md
+templates/scratch.md.template	Exists	Reuse as docs/02-feature/_templates/scratch.md
+templates/test.md.template	Exists	Reuse as docs/02-feature/_templates/test.md
+skills/*.md (8 files)	Exist	Copy into docs/01-sdlc/ at init (unchanged content)
+
+### Scripts — what to change
+
+Script	Change
+scripts/memory_init.py	Extend — add docs/00-project/ (4 stubs), docs/01-sdlc/ (8 skill files), docs/02-feature/_templates/ (5 template files) creation; keep all existing outputs unchanged
+scripts/feature_init.py	Implement fully — currently a stub (pass). Read next_feat/next_fix counter from index.json, create docs/02-feature/FEAT_NNN_<slug>/ with 5 files copied from _templates/, pre-fill feature.md with name, pre-fill plan.md with CONTEXT.md snippet, write back incremented counter
+scripts/memory_cli.py	Extend — wire `feature <name>` and `fix <name>` subcommands to feature_init.py
+
+### index.json schema extension
+
+Add two counters (written by memory_init.py, incremented by feature_init.py):
+
+  "next_feat": 1,
+  "next_fix": 1
+
+### Trigger points (auto-creation)
+
+Event	What auto-creates
+python setup.py / memory init	Full docs/00-project/, docs/01-sdlc/, docs/02-feature/_templates/
+memory feature <name>	docs/02-feature/FEAT_NNN_<slug>/ with 5 pre-filled files
+memory fix <name>	docs/02-feature/FIX_NNN_<slug>/ with 5 pre-filled files
+
+### What does NOT change
+
+- CONTEXT.md, decisions.md, index.json stay at .ai-memory/ root
+- Existing template files are reused — no duplication
+- Hook system, scan system, wiki system — untouched
+- All changes are purely additive; no existing behaviour is broken
+
 Parallel agent plan
 
 ### Here's how I'd split this across agents simultaneously:

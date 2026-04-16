@@ -140,61 +140,61 @@ def backfill(
 
     if verbose:
         print(f"  Scanning git history (up to {limit} commits)...")
-
+    hashes = _get_commit_hashes(limit=limit)
     # Phase 1: Full ingest of last N commits
     if not force and _already_backfilled(db, project):
-    for i, commit_hash in enumerate(hashes):
-        detail = _get_commit_detail(commit_hash)
-        msg = detail["msg"]
-        if not msg:
-            continue
+        for i, commit_hash in enumerate(hashes):
+            detail = _get_commit_detail(commit_hash)
+            msg = detail["msg"]
+            if not msg:
+                continue
 
-        parsed = _parse_message(msg)
-        tags = parsed["tags"] + _classify_files(detail["files"])
+            parsed = _parse_message(msg)
+            tags = parsed["tags"] + _classify_files(detail["files"])
 
-        # Build detail string
-        detail_parts = []
-        if parsed["scope"]:
-            detail_parts.append(f"scope: {parsed['scope']}")
-        if detail["added"] or detail["removed"]:
-            detail_parts.append(f"+{detail['added']} -{detail['removed']} lines")
-        if parsed["body"]:
-            detail_parts.append(parsed["body"])
-        if detail["author"]:
-            detail_parts.append(f"by {detail['author']}")
-        detail_str = " | ".join(detail_parts)
+            # Build detail string
+            detail_parts = []
+            if parsed["scope"]:
+                detail_parts.append(f"scope: {parsed['scope']}")
+            if detail["added"] or detail["removed"]:
+                detail_parts.append(f"+{detail['added']} -{detail['removed']} lines")
+            if parsed["body"]:
+                detail_parts.append(parsed["body"])
+            if detail["author"]:
+                detail_parts.append(f"by {detail['author']}")
+            detail_str = " | ".join(detail_parts)
 
-        entry_type = _entry_type_from_commit(parsed["type"])
+            entry_type = _entry_type_from_commit(parsed["type"])
 
-        # Use the commit's actual timestamp
-        created_at = f"{detail['date']} 12:00:00"
+            # Use the commit's actual timestamp
+            created_at = f"{detail['date']} 12:00:00"
 
-        store.add_entry(
-            project=project,
-            entry_type=entry_type,
-            summary=parsed["desc"],
-            detail=detail_str,
-            tags=list(set(tags)),
-            files=detail["files"][:20],
-            created_at=created_at,
-        )
-        commits_imported += 1
-
-        # Decision entries
-        if "decision" in tags:
             store.add_entry(
                 project=project,
-                entry_type="decision",
-                summary=f"[ADR] {parsed['desc']}",
-                detail=parsed["body"] or parsed["desc"],
-                tags=["decision", parsed["type"]],
-                files=detail["files"][:5],
+                entry_type=entry_type,
+                summary=parsed["desc"],
+                detail=detail_str,
+                tags=list(set(tags)),
+                files=detail["files"][:20],
                 created_at=created_at,
             )
-            decisions_found += 1
+            commits_imported += 1
 
-        if verbose and (i + 1) % 50 == 0:
-            print(f"    ... processed {i + 1}/{len(hashes)} commits")
+            # Decision entries
+            if "decision" in tags:
+                store.add_entry(
+                    project=project,
+                    entry_type="decision",
+                    summary=f"[ADR] {parsed['desc']}",
+                    detail=parsed["body"] or parsed["desc"],
+                    tags=["decision", parsed["type"]],
+                    files=detail["files"][:5],
+                    created_at=created_at,
+                )
+                decisions_found += 1
+
+            if verbose and (i + 1) % 50 == 0:
+                print(f"    ... processed {i + 1}/{len(hashes)} commits")
 
     # Phase 2: Scan ALL commit messages for decisions not captured above
     if verbose:

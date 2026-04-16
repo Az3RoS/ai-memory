@@ -1,0 +1,18 @@
+# Architecture
+
+## System Design
+[High-level system diagram/description]
+
+## Core Components
+- [Component 1]: [Purpose]
+- [Component 2]: [Purpose]
+- [Component 3]: [Purpose]
+
+## Data Flow
+[How data moves through the system]
+
+## External Integrations
+[APIs, services, third-party tools]
+
+## Scalability Considerations
+[How is the system designed to scale?]
