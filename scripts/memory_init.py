@@ -140,6 +140,8 @@ def init_project(cfg: Config, slug: str, repo_path: str):
         "token_budget": 1500,
         "entry_count":  0,
         "last_sync":    None,
+        "next_feat":    1,
+        "next_fix":     1,
     }
     (mem_dir / "index.json").write_text(json.dumps(index, indent=2), encoding="utf-8")
 

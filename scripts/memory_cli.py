@@ -14,6 +14,8 @@ Usage:
     memory_cli.py backfill   [--project <slug>] [--limit <n>] [--force]
     memory_cli.py review     [--project <slug>]
     memory_cli.py pr-context [--project <slug>]
+    memory_cli.py feature    <name>             [--project <slug>]
+    memory_cli.py fix        <name>             [--project <slug>]
 """
 
 import argparse
@@ -41,6 +43,7 @@ from memory_config import Config
 from backfill import backfill as _backfill
 from review import generate_review
 from pr_context import generate_pr_description
+from feature_init import create_feature, create_fix
 
 
 def cmd_ingest(args, cfg):
@@ -138,6 +141,66 @@ def cmd_pr_context(args, cfg):
     generate_pr_description(project, cfg, verbose=True)
 
 
+def cmd_feature(args, cfg):
+    project = args.project or cfg.detect_project()
+    if not args.terms:
+        print("[memory] feature name required (e.g. 'memory feature MyFeature')", file=sys.stderr)
+        sys.exit(1)
+    
+    # Get project repo path
+    projects = cfg.list_projects()
+    repo_path = None
+    for p in projects:
+        if p["slug"] == project:
+            repo_path = p.get("repo_path")
+            break
+    
+    if not repo_path:
+        print(f"[memory] project '{project}' not found", file=sys.stderr)
+        sys.exit(1)
+    
+    from pathlib import Path
+    mem_dir = Path(repo_path) / ".ai-memory"
+    
+    # Get context snippet if available
+    store = MemoryStore(cfg.global_db_path())
+    results = query_memory(store, "", project=project, limit=5)
+    context_block = build_context_block(results, token_budget=500)
+    
+    feat_dir = create_feature(mem_dir, args.terms, context_block)
+    print(f"[memory] created feature '{args.terms}' at {feat_dir}")
+
+
+def cmd_fix(args, cfg):
+    project = args.project or cfg.detect_project()
+    if not args.terms:
+        print("[memory] fix name required (e.g. 'memory fix BugName')", file=sys.stderr)
+        sys.exit(1)
+    
+    # Get project repo path
+    projects = cfg.list_projects()
+    repo_path = None
+    for p in projects:
+        if p["slug"] == project:
+            repo_path = p.get("repo_path")
+            break
+    
+    if not repo_path:
+        print(f"[memory] project '{project}' not found", file=sys.stderr)
+        sys.exit(1)
+    
+    from pathlib import Path
+    mem_dir = Path(repo_path) / ".ai-memory"
+    
+    # Get context snippet if available
+    store = MemoryStore(cfg.global_db_path())
+    results = query_memory(store, "", project=project, limit=5)
+    context_block = build_context_block(results, token_budget=500)
+    
+    fix_dir = create_fix(mem_dir, args.terms, context_block)
+    print(f"[memory] created fix '{args.terms}' at {fix_dir}")
+
+
 COMMANDS = {
     "ingest":      cmd_ingest,
     "query":       cmd_query,
@@ -150,6 +213,8 @@ COMMANDS = {
     "backfill":    cmd_backfill,
     "review":      cmd_review,
     "pr-context":  cmd_pr_context,
+    "feature":     cmd_feature,
+    "fix":         cmd_fix,
 }
 
 
