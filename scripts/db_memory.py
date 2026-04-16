@@ -1,128 +1,3 @@
-# db_memory.py
-# New schema: memories, file_pairs, knowledge_graph, patterns, stacks, developers, sprints, schema_version + 11 functions
-import sqlite3
-from pathlib import Path
-import json
-
-class DBMemory:
-    def __init__(self, db_path):
-        self.db_path = Path(db_path)
-        self.conn = sqlite3.connect(self.db_path)
-        self._init_schema()
-
-    def _init_schema(self):
-        cur = self.conn.cursor()
-        cur.execute('''CREATE TABLE IF NOT EXISTS memories (
-            id INTEGER PRIMARY KEY,
-            project TEXT,
-            entry_type TEXT,
-            summary TEXT,
-            detail TEXT,
-            tags TEXT,
-            files TEXT,
-            date TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS file_pairs (
-            id INTEGER PRIMARY KEY,
-            file_a TEXT,
-            file_b TEXT,
-            count INTEGER
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS knowledge_graph (
-            id INTEGER PRIMARY KEY,
-            entity_a TEXT,
-            relation TEXT,
-            entity_b TEXT,
-            project TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS patterns (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            description TEXT,
-            project TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS stacks (
-            id INTEGER PRIMARY KEY,
-            stack_name TEXT,
-            details TEXT,
-            project TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS developers (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            email TEXT,
-            project TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS sprints (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            start_date TEXT,
-            end_date TEXT,
-            project TEXT
-        )''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS schema_version (
-            version INTEGER
-        )''')
-        self.conn.commit()
-
-    def add_memory(self, project, entry_type, summary, detail, tags, files, date):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO memories (project, entry_type, summary, detail, tags, files, date)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                    (project, entry_type, summary, detail, tags, files, date))
-        self.conn.commit()
-        return cur.lastrowid
-
-    def get_memories(self, project, limit=20):
-        cur = self.conn.cursor()
-        cur.execute('''SELECT * FROM memories WHERE project=? ORDER BY date DESC LIMIT ?''', (project, limit))
-        return cur.fetchall()
-
-    def add_file_pair(self, file_a, file_b, count):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO file_pairs (file_a, file_b, count) VALUES (?, ?, ?)''', (file_a, file_b, count))
-        self.conn.commit()
-
-    def add_knowledge_edge(self, entity_a, relation, entity_b, project):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO knowledge_graph (entity_a, relation, entity_b, project)
-                       VALUES (?, ?, ?, ?)''', (entity_a, relation, entity_b, project))
-        self.conn.commit()
-
-    def add_pattern(self, name, description, project):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO patterns (name, description, project) VALUES (?, ?, ?)''', (name, description, project))
-        self.conn.commit()
-
-    def add_stack(self, stack_name, details, project):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO stacks (stack_name, details, project) VALUES (?, ?, ?)''', (stack_name, details, project))
-        self.conn.commit()
-
-    def add_developer(self, name, email, project):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO developers (name, email, project) VALUES (?, ?, ?)''', (name, email, project))
-        self.conn.commit()
-
-    def add_sprint(self, name, start_date, end_date, project):
-        cur = self.conn.cursor()
-        cur.execute('''INSERT INTO sprints (name, start_date, end_date, project) VALUES (?, ?, ?, ?)''', (name, start_date, end_date, project))
-        self.conn.commit()
-
-    def set_schema_version(self, version):
-        cur = self.conn.cursor()
-        cur.execute('DELETE FROM schema_version')
-        cur.execute('INSERT INTO schema_version (version) VALUES (?)', (version,))
-        self.conn.commit()
-
-    def get_schema_version(self):
-        cur = self.conn.cursor()
-        cur.execute('SELECT version FROM schema_version')
-        row = cur.fetchone()
-        return row[0] if row else None
-
-    def close(self):
-        self.conn.close()
 """
 db_memory.py — Temporal memory database (memory.db)
 
@@ -133,71 +8,74 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
-DB_SCHEMA = """
+_SCHEMA = """
 PRAGMA journal_mode=WAL;
 PRAGMA foreign_keys=ON;
 
 CREATE TABLE IF NOT EXISTS memories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    entry_type TEXT NOT NULL,
-    summary TEXT NOT NULL,
-    detail TEXT,
-    tags TEXT,
-    files TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    date TEXT NOT NULL DEFAULT (date('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    entry_type  TEXT NOT NULL,
+    summary     TEXT NOT NULL,
+    detail      TEXT,
+    tags        TEXT,
+    files       TEXT,
+    date        TEXT NOT NULL DEFAULT (date('now')),
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS file_pairs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    file_a TEXT NOT NULL,
-    file_b TEXT NOT NULL,
-    count INTEGER NOT NULL DEFAULT 1,
-    last_seen TEXT NOT NULL DEFAULT (datetime('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL DEFAULT '',
+    file_a      TEXT NOT NULL,
+    file_b      TEXT NOT NULL,
+    count       INTEGER NOT NULL DEFAULT 1,
+    last_seen   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS knowledge_graph (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    from_entity TEXT NOT NULL,
-    relation TEXT NOT NULL,
-    to_entity TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    entity_a    TEXT NOT NULL,
+    relation    TEXT NOT NULL,
+    entity_b    TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS patterns (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    pattern TEXT NOT NULL,
-    confidence REAL NOT NULL,
-    files TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT,
+    confidence  REAL NOT NULL DEFAULT 1.0,
+    files       TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS stacks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    stack TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    stack_name  TEXT NOT NULL,
+    details     TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS developers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    name TEXT NOT NULL,
-    email TEXT,
-    joined_at TEXT NOT NULL DEFAULT (datetime('now'))
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    email       TEXT,
+    joined_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS sprints (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project TEXT NOT NULL,
-    name TEXT NOT NULL,
-    started_at TEXT NOT NULL,
-    ended_at TEXT,
-    summary TEXT
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project     TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    start_date  TEXT,
+    end_date    TEXT,
+    summary     TEXT,
+    started_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -205,8 +83,9 @@ CREATE TABLE IF NOT EXISTS schema_version (
 );
 """
 
+
 class DBMemory:
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._conn: Optional[sqlite3.Connection] = None
@@ -220,12 +99,131 @@ class DBMemory:
         return self._conn
 
     def _ensure_schema(self):
-        self.conn.executescript(DB_SCHEMA)
+        self.conn.executescript(_SCHEMA)
         self.conn.commit()
 
-    def close(self):
+    # ── memories ───────────────────────────────────────────────────────────────
+
+    def add_memory(self, project: str, entry_type: str, summary: str,
+                   detail: str = "", tags: str = "", files: str = "",
+                   date: str = "") -> int:
+        cur = self.conn.cursor()
+        if date:
+            cur.execute(
+                "INSERT INTO memories (project, entry_type, summary, detail, tags, files, date)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (project, entry_type, summary, detail, tags, files, date),
+            )
+        else:
+            cur.execute(
+                "INSERT INTO memories (project, entry_type, summary, detail, tags, files)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (project, entry_type, summary, detail, tags, files),
+            )
+        self.conn.commit()
+        return cur.lastrowid
+
+    def get_memories(self, project: str, limit: int = 20) -> list:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT * FROM memories WHERE project=? ORDER BY date DESC, id DESC LIMIT ?",
+            (project, limit),
+        )
+        return cur.fetchall()
+
+    def all_for_project(self, project: str, limit: int = 100) -> list[dict]:
+        cur = self.conn.cursor()
+        cur.execute(
+            "SELECT * FROM memories WHERE project=? ORDER BY date DESC, id DESC LIMIT ?",
+            (project, limit),
+        )
+        rows = cur.fetchall()
+        return [dict(r) for r in rows]
+
+    # ── file_pairs ─────────────────────────────────────────────────────────────
+
+    def add_file_pair(self, file_a: str, file_b: str, count: int = 1,
+                      project: str = "") -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO file_pairs (project, file_a, file_b, count) VALUES (?, ?, ?, ?)",
+            (project, file_a, file_b, count),
+        )
+        self.conn.commit()
+
+    # ── knowledge_graph ────────────────────────────────────────────────────────
+
+    def add_knowledge_edge(self, entity_a: str, relation: str, entity_b: str,
+                           project: str) -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO knowledge_graph (project, entity_a, relation, entity_b)"
+            " VALUES (?, ?, ?, ?)",
+            (project, entity_a, relation, entity_b),
+        )
+        self.conn.commit()
+
+    # ── patterns ───────────────────────────────────────────────────────────────
+
+    def add_pattern(self, name: str, description: str = "", project: str = "",
+                    confidence: float = 1.0, files: str = "") -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO patterns (project, name, description, confidence, files)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (project, name, description, confidence, files),
+        )
+        self.conn.commit()
+
+    # ── stacks ─────────────────────────────────────────────────────────────────
+
+    def add_stack(self, stack_name: str, details: str = "", project: str = "") -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO stacks (project, stack_name, details) VALUES (?, ?, ?)",
+            (project, stack_name, details),
+        )
+        self.conn.commit()
+
+    # ── developers ─────────────────────────────────────────────────────────────
+
+    def add_developer(self, name: str, email: str = "", project: str = "") -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO developers (project, name, email) VALUES (?, ?, ?)",
+            (project, name, email),
+        )
+        self.conn.commit()
+
+    # ── sprints ────────────────────────────────────────────────────────────────
+
+    def add_sprint(self, name: str, start_date: str = "", end_date: str = "",
+                   project: str = "", summary: str = "") -> None:
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO sprints (project, name, start_date, end_date, summary)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (project, name, start_date, end_date, summary),
+        )
+        self.conn.commit()
+
+    # ── schema_version ─────────────────────────────────────────────────────────
+
+    def set_schema_version(self, version: int) -> None:
+        cur = self.conn.cursor()
+        cur.execute("DELETE FROM schema_version")
+        cur.execute("INSERT INTO schema_version (version) VALUES (?)", (version,))
+        self.conn.commit()
+
+    def get_schema_version(self) -> Optional[int]:
+        cur = self.conn.cursor()
+        cur.execute("SELECT version FROM schema_version")
+        row = cur.fetchone()
+        return row[0] if row else None
+
+    # ── lifecycle ──────────────────────────────────────────────────────────────
+
+    def close(self) -> None:
         if self._conn:
             self._conn.close()
             self._conn = None
-
-    # Add CRUD and query methods as needed for each table

@@ -11,6 +11,122 @@ def _read_template(template_name: str) -> str:
         return template_path.read_text(encoding="utf-8")
     return f"# {template_name.replace('-', ' ').title()}\n\nTo be documented.\n"
 
+def generate_all(conn, project: str, wiki_dir: Path) -> list[str]:
+    """
+    Entry point called by scan.py after scanning.
+    conn  — open sqlite3 connection to wiki.db
+    Returns list of written file paths.
+    """
+    wiki_dir = Path(wiki_dir)
+    wiki_dir.mkdir(parents=True, exist_ok=True)
+
+    written: list[str] = []
+
+    page_map = {
+        "INDEX.md":                    "index",
+        "ARCHITECTURE.md":             "architecture",
+        "api/endpoints.md":            "endpoints",
+        "models/overview.md":          "models",
+        "services/overview.md":        "services",
+        "database/tables.md":          "database",
+        "components/overview.md":      "components",
+        "tests/coverage-map.md":       "coverage",
+    }
+
+    for rel_path, template_name in page_map.items():
+        out_path = wiki_dir / rel_path
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        content = _render_page(conn, project, template_name)
+        out_path.write_text(content, encoding="utf-8")
+        written.append(str(out_path))
+
+    return written
+
+
+def _render_page(conn, project: str, page: str) -> str:
+    """Query wiki.db for relevant entities and render a wiki page."""
+    template = _read_template(page)
+
+    try:
+        cur = conn.cursor()
+        if page == "index":
+            cur.execute(
+                "SELECT entity_type, COUNT(*) as cnt FROM entities WHERE project=? GROUP BY entity_type",
+                (project,),
+            )
+            rows = cur.fetchall()
+            stats = "\n".join(f"- **{r[0]}**: {r[1]}" for r in rows) or "_No entities scanned yet._"
+            return f"# Wiki Index — {project}\n\n## Entity Summary\n\n{stats}\n\n{template}"
+
+        elif page == "architecture":
+            cur.execute(
+                "SELECT DISTINCT file_path FROM entities WHERE project=? ORDER BY file_path",
+                (project,),
+            )
+            files = [r[0] for r in cur.fetchall() if r[0]]
+            listing = "\n".join(f"- `{f}`" for f in files[:50]) or "_No files scanned yet._"
+            return f"# Architecture — {project}\n\n## Scanned Files\n\n{listing}\n\n{template}"
+
+        elif page == "endpoints":
+            cur.execute(
+                "SELECT entity, file_path, metadata FROM entities WHERE project=? AND entity_type='endpoint'",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No endpoints found._"]
+            return f"# API Endpoints — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+        elif page == "models":
+            cur.execute(
+                "SELECT entity, file_path FROM entities WHERE project=? AND entity_type='model'",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No models found._"]
+            return f"# Models — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+        elif page == "services":
+            cur.execute(
+                "SELECT entity, file_path FROM entities WHERE project=? AND entity_type='service'",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No services found._"]
+            return f"# Services — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+        elif page == "database":
+            cur.execute(
+                "SELECT entity, file_path FROM entities WHERE project=? AND entity_type='table'",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No tables found._"]
+            return f"# Database — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+        elif page == "components":
+            cur.execute(
+                "SELECT entity, file_path FROM entities WHERE project=? AND entity_type IN ('component','hook')",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No components found._"]
+            return f"# Components — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+        elif page == "coverage":
+            cur.execute(
+                "SELECT entity, file_path FROM entities WHERE project=? AND entity_type='test'",
+                (project,),
+            )
+            rows = cur.fetchall()
+            lines = [f"- `{r[0]}` — `{r[1]}`" for r in rows] or ["_No test entities found._"]
+            return f"# Test Coverage Map — {project}\n\n" + "\n".join(lines) + f"\n\n{template}"
+
+    except Exception:
+        pass
+
+    return template
+
+
 def generate_wiki(project: str, repo_dir: Path, db_path: Path = None):
     """
     Generate wiki pages from wiki.db data.

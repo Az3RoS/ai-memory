@@ -3,8 +3,12 @@ migrate.py — Schema migration handler for memory.db and wiki.db.
 """
 from pathlib import Path
 
-from scripts.db_memory import DBMemory
-from scripts.db_wiki import DBWiki
+import os
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
+
+from db_memory import DBMemory
+from db_wiki import DBWiki
 
 
 def migrate_db_memory(db_path, target_version=1):
