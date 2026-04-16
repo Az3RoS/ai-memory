@@ -36,22 +36,14 @@ if hasattr(sys.stdout, "reconfigure"):
 SCRIPT_DIR = Path(__file__).parent / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-
-# Remove legacy imports; use only new modules
-from scripts.db_memory import DBMemory
-from scripts.db_wiki import DBWiki
-from scripts.utils import slugify, estimate_tokens, read_json, write_json
-from scripts.cli import main as cli_main
-from scripts.sync import sync_to_repo
-from scripts.backfill import backfill
-from scripts.pointers import generate_pointers
-from scripts.detect import detect_all
-
-# New imports for updated architecture
-from scripts.db_memory import DBMemory
-from scripts.db_wiki import DBWiki
-from scripts.utils import slugify, estimate_tokens, read_json, write_json
-from scripts.cli import main as cli_main
+# Import new modules
+from db_memory import DBMemory
+from db_wiki import DBWiki
+from utils import slugify, estimate_tokens, read_json, write_json
+from sync import sync_to_repo
+from backfill import backfill
+from pointers import generate_pointers
+from detect import detect_all
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -66,12 +58,14 @@ def _banner(title: str):
 
 def _copy_skills(repo_root: Path, verbose: bool = True):
     """Copy skills/ from the tool repo to <repo>/docs/01-sdlc/."""
-    src = Path(__file__).parent / "skills"
+    # Use absolute path from this file's location
+    tool_root = Path(__file__).resolve().parent
+    src = tool_root / "skills"
     dst = repo_root / "docs" / "01-sdlc"
 
     if not src.exists():
         if verbose:
-            print("  [~] skills/ directory not found in tool repo - skipping")
+            print(f"  [~] skills/ directory not found at {src} - skipping")
         return
 
     dst.mkdir(parents=True, exist_ok=True)
