@@ -181,23 +181,63 @@ def init_project(cfg: Config, slug: str, repo_path: str):
     else:
         print(f"  [warn] .git/hooks not found at {hooks_dir} - hooks not installed")
 
-    # 7. Copy skills directory and install to 01-sdlc
-    skills_src = Path(__file__).parent.parent / "skills"
-    if skills_src.exists():
-        skills_dst = mem_dir / "skills"
-        skills_dst.mkdir(exist_ok=True)
-        for skill_file in skills_src.glob("*.md"):
-            shutil.copy2(skill_file, skills_dst / skill_file.name)
-        
-        # Also install to docs/01-sdlc/
+    # 7. Create docs structure: 00-project, 01-sdlc, 02-feature/_templates
+    docs_root = mem_dir / "docs"
+    
+    # Create 00-project stub files
+    project_dir = docs_root / "00-project"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    stubs = {
+        "overview.md": "# Project Overview\n\nAdd project overview here.\n",
+        "arch.md": "# Architecture\n\nAdd architecture notes here.\n",
+        "conventions.md": "# Conventions\n\nAdd coding conventions here.\n",
+        "design.md": "# Design Decisions\n\nAdd design decisions here.\n",
+    }
+    for filename, content in stubs.items():
+        stub_file = project_dir / filename
+        if not stub_file.exists():
+            stub_file.write_text(content, encoding="utf-8")
+    
+    # Create 02-feature/_templates stub files
+    templates_dir = docs_root / "02-feature" / "_templates"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    template_stubs = {
+        "feature.md": "# Feature: [Name]\n\nFeature description here.\n",
+        "plan.md": "# Plan\n\nImplementation plan here.\n",
+        "scratch.md": "# Scratch\n\nWorking notes here.\n",
+        "test.md": "# Tests\n\nTest cases here.\n",
+        "dod.md": "# Definition of Done\n\nDone criteria here.\n",
+    }
+    for filename, content in template_stubs.items():
+        stub_file = templates_dir / filename
+        if not stub_file.exists():
+            stub_file.write_text(content, encoding="utf-8")
+    
+    # 8. Copy skills directory to 01-sdlc
+    # Try multiple ways to find the skills directory
+    candidates = [
+        Path(__file__).resolve().parent.parent / "skills",  # scripts/memory_init.py -> repo root
+        Path(__file__).parent.parent / "skills",  # relative fallback
+        Path.cwd() / "skills",  # current working directory
+        Path.cwd().parent / "ai-memory" / "skills",  # parent directory
+    ]
+    
+    skills_src = None
+    for candidate in candidates:
+        if candidate.exists() and (candidate / "architect.md").exists():
+            skills_src = candidate
+            break
+    
+    if skills_src:
+        # Install to docs/01-sdlc/ only (single source of truth)
         sdlc_dst = mem_dir / "docs" / "01-sdlc"
         sdlc_dst.mkdir(parents=True, exist_ok=True)
         for skill_file in skills_src.glob("*.md"):
             shutil.copy2(skill_file, sdlc_dst / skill_file.name)
     else:
-        print(f"  [warn] skills directory not found at {skills_src}")
+        print(f"  [warn] skills directory not found - checked: {candidates}")
 
-    # 8. Generate IDE pointer files
+    # 9. Generate IDE pointer files
     try:
         import sys
         sys.path.insert(0, str(Path(__file__).parent))

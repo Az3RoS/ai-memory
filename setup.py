@@ -56,16 +56,63 @@ def _banner(title: str):
     print("-" * width)
 
 
-def _copy_skills(repo_root: Path, verbose: bool = True):
-    """Copy skills/ from the tool repo to <repo>/docs/01-sdlc/."""
-    # Use absolute path from this file's location
-    tool_root = Path(__file__).resolve().parent
-    src = tool_root / "skills"
-    dst = repo_root / "docs" / "01-sdlc"
+def _create_docs_structure(mem_dir: Path, verbose: bool = True):
+    """Create full docs structure under .ai-memory/: 00-project, 01-sdlc, 02-feature/_templates."""
+    docs_root = mem_dir / "docs"
+    
+    # Create 00-project stub files
+    project_dir = docs_root / "00-project"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    stubs = {
+        "overview.md": "# Project Overview\n\nAdd project overview here.\n",
+        "arch.md": "# Architecture\n\nAdd architecture notes here.\n",
+        "conventions.md": "# Conventions\n\nAdd coding conventions here.\n",
+        "design.md": "# Design Decisions\n\nAdd design decisions here.\n",
+    }
+    for filename, content in stubs.items():
+        stub_file = project_dir / filename
+        if not stub_file.exists():
+            stub_file.write_text(content, encoding="utf-8")
+    
+    # Create 02-feature/_templates stub files
+    templates_dir = docs_root / "02-feature" / "_templates"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    template_stubs = {
+        "feature.md": "# Feature: [Name]\n\nFeature description here.\n",
+        "plan.md": "# Plan\n\nImplementation plan here.\n",
+        "scratch.md": "# Scratch\n\nWorking notes here.\n",
+        "test.md": "# Tests\n\nTest cases here.\n",
+        "dod.md": "# Definition of Done\n\nDone criteria here.\n",
+    }
+    for filename, content in template_stubs.items():
+        stub_file = templates_dir / filename
+        if not stub_file.exists():
+            stub_file.write_text(content, encoding="utf-8")
+    
+    if verbose:
+        print(f"  [ok] created docs structure: 00-project, 01-sdlc, 02-feature/_templates")
 
-    if not src.exists():
+
+def _copy_skills(mem_dir: Path, verbose: bool = True):
+    """Copy skills/ from the tool repo to .ai-memory/docs/01-sdlc/."""
+    # Try multiple ways to find the skills directory
+    candidates = [
+        Path(__file__).resolve().parent / "skills",  # Primary: based on __file__
+        Path.cwd() / "skills",  # Fallback: current working directory
+        Path.cwd().parent / "ai-memory" / "skills",  # Fallback: parent directory
+    ]
+    
+    src = None
+    for candidate in candidates:
+        if candidate.exists() and (candidate / "architect.md").exists():
+            src = candidate
+            break
+    
+    dst = mem_dir / "docs" / "01-sdlc"
+
+    if src is None:
         if verbose:
-            print(f"  [~] skills/ directory not found at {src} - skipping")
+            print(f"  [~] skills/ directory not found - checked: {candidates}")
         return
 
     dst.mkdir(parents=True, exist_ok=True)
@@ -76,7 +123,7 @@ def _copy_skills(repo_root: Path, verbose: bool = True):
         copied += 1
 
     if verbose and copied > 0:
-        print(f"  [ok] copied {copied} skill files to docs/01-sdlc/")
+        print(f"  [ok] copied {copied} skill files to .ai-memory/docs/01-sdlc/")
 
 
 def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True):
@@ -189,12 +236,13 @@ def main():
     template_path = Path(__file__).parent / "templates" / "pointer.md.template"
     written = generate_pointers(repo_root, template_path=template_path, verbose=verbose)
 
-    # ── Step 4: Copy skills ───────────────────────────────────────────────────
+    # ── Step 4: Create docs structure and copy skills ────────────────────
     if verbose:
         print()
-        print(f"  [4/6] Installing skill files...")
+        print(f"  [4/6] Creating docs structure and installing skills...")
 
-    _copy_skills(repo_root, verbose=verbose)
+    _create_docs_structure(mem_dir, verbose=verbose)
+    _copy_skills(mem_dir, verbose=verbose)
 
     # ── Step 5: Backfill git history ──────────────────────────────────────────
     db_path = Path.home() / ".ai-memory" / "memory.db"
