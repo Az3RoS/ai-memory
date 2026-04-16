@@ -7,6 +7,8 @@ Usage:
     python setup.py --rebuild        # Wipe local DB and reimport from git history
     python setup.py --repo /path     # Install in specific repo
     python setup.py --project slug   # Override project slug (default: repo dir name)
+    python setup.py --feature "New feature name"    # Create a feature template after setup
+    python setup.py --fix "Bug fix description"     # Create a fix template after setup
 
 What it does:
   1. Detects stack, IDEs, monorepo structure
@@ -39,6 +41,8 @@ sys.path.insert(0, str(SCRIPT_DIR))
 # Import new modules
 from db_memory import DBMemory
 from db_wiki import DBWiki
+from wiki_gen import generate_wiki
+from feature_init import create_feature, create_fix
 from utils import slugify, estimate_tokens, read_json, write_json
 from sync import sync_to_repo
 from backfill import backfill
@@ -174,6 +178,8 @@ def main():
     )
     parser.add_argument("--repo",    "-r", help="Path to target repo (default: cwd)")
     parser.add_argument("--project", "-p", help="Project slug (default: repo dir name)")
+    parser.add_argument("--feature", help="Create a new feature template after setup")
+    parser.add_argument("--fix", help="Create a new fix template after setup")
     parser.add_argument("--rebuild", action="store_true",
                         help="Wipe local memory.db entries for this project and reimport")
     parser.add_argument("--quiet",   action="store_true", help="Suppress output")
@@ -274,6 +280,37 @@ def main():
     if verbose:
         print("  [ok] .ai-memory/CONTEXT.md generated")
 
+    # ── Step 7: Generate wiki structure ──────────────────────────────────────
+    if verbose:
+        print()
+        print(f"  [7/7] Generating .ai-wiki structure...")
+
+    wiki_db_path = Path.home() / ".ai-memory" / "wiki" / f"{project}.db"
+    wiki_db_path.parent.mkdir(parents=True, exist_ok=True)
+    generate_wiki(project, repo_root, wiki_db_path)
+
+    if verbose:
+        print("  [ok] .ai-wiki/ structure generated")
+
+    feature_dir = None
+    fix_dir = None
+    if args.feature or args.fix:
+        context_block = ""
+        ctx_file = mem_dir / "CONTEXT.md"
+        if ctx_file.exists():
+            lines = ctx_file.read_text(encoding="utf-8").splitlines()
+            context_block = "\n".join(lines[:20])
+
+    if args.feature:
+        feature_dir = create_feature(mem_dir, args.feature, context_block=context_block)
+        if verbose:
+            print(f"  [ok] feature template created at {feature_dir}")
+
+    if args.fix:
+        fix_dir = create_fix(mem_dir, args.fix, context_block=context_block)
+        if verbose:
+            print(f"  [ok] fix template created at {fix_dir}")
+
     # ── Summary ───────────────────────────────────────────────────────────────
     if verbose:
         _banner("Setup complete")
@@ -282,6 +319,11 @@ def main():
         print("  [ok] .ai-memory/ initialised")
         print(f"  [ok] {len(written)} IDE pointer files generated")
         print("  [ok] Skills installed at docs/01-sdlc/")
+        print("  [ok] .ai-wiki/ structure initialised")
+        if feature_dir:
+            print(f"  [ok] feature template created at {feature_dir}")
+        if fix_dir:
+            print(f"  [ok] fix template created at {fix_dir}")
         if result.get("commits_imported", 0) > 0:
             print(f"  [ok] {result['commits_imported']} commits imported, "
                   f"{result['decisions_found']} decisions found")
@@ -290,8 +332,10 @@ def main():
         print("  1. Commit .ai-memory/ to share context with your team")
         print("     git add .ai-memory/ CLAUDE.md .cursorrules AGENTS.md")
         print("     git commit -m 'chore: add ai-memory context'")
-        print("  2. Make a commit - hooks will auto-update CONTEXT.md")
-        print("  3. Open your AI IDE - it will read .ai-memory/CONTEXT.md")
+        print("  2. Optional: commit .ai-wiki/ if you want to share documentation")
+        print("     git add .ai-wiki/")
+        print("  3. Make a commit - hooks will auto-update CONTEXT.md")
+        print("  4. Open your AI IDE - it will read .ai-memory/CONTEXT.md")
         print()
 
 

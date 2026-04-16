@@ -144,6 +144,12 @@ python ~/.ai-memory-system/setup.py
 # Override the project name (default: repo folder name)
 python ~/.ai-memory-system/setup.py --project my-api
 
+# Create a feature template immediately after setup
+python ~/.ai-memory-system/setup.py --feature "User authentication redesign"
+
+# Create a fix template immediately after setup
+python ~/.ai-memory-system/setup.py --fix "Login timeout bug"
+
 # Wipe and reimport all history from scratch
 python ~/.ai-memory-system/setup.py --rebuild
 
@@ -168,6 +174,16 @@ python ~/.ai-memory-system/setup.py --repo /path/to/repo
     debug.md
     onboard.md
     sprint.md
+.ai-wiki/            ← optional generated project wiki
+  wiki/
+    INDEX.md
+    ARCHITECTURE.md
+    api/endpoints.md
+    models/overview.md
+    services/overview.md
+    database/tables.md
+    components/overview.md
+    tests/coverage-map.md
 CLAUDE.md             ← pointer for Claude Code
 .cursorrules          ← pointer for Cursor
 AGENTS.md             ← pointer for Codex CLI
@@ -178,6 +194,25 @@ GEMINI.md             ← pointer for Gemini CLI
 .junie/
   guidelines.md       ← pointer for JetBrains
 ```
+
+### What is `.ai-wiki`?
+
+`.ai-wiki/` is the generated project wiki folder. It is created automatically during setup and seeded with documentation templates for architecture, API, models, services, database, components, and test coverage.
+
+- `.ai-wiki/wiki/INDEX.md` is the entry point for the generated wiki
+- The rest of the files are stubs you can fill in as the project evolves
+- Commit `.ai-wiki/` if your team wants the generated docs in source control
+- If you want to regenerate the wiki structure later, re-run:
+  ```bash
+  python ~/.ai-memory-system/setup.py
+  ```
+- If you only need a new feature or fix template, use:
+  ```bash
+  python ~/.ai-memory-system/setup.py --feature "My feature name"
+  python ~/.ai-memory-system/setup.py --fix "My bug fix"
+  ```
+
+The generated files are intended as a starting point. Edit them in place and keep them synced with your project architecture.
 
 **On your machine only (never committed):**
 ```
@@ -256,17 +291,93 @@ git commit -m "fix(auth): blocker — JWT tokens expiring too early due to clock
 git commit -m "feat(payments): add Stripe webhook handler"
 ```
 
+### Creating a new feature or fix
+
+When you start work on a feature or bug fix, initialize it with ai-memory. This creates a dedicated folder with templates and automatically embeds current project context.
+
+**Start a feature:**
+```bash
+python ~/.ai-memory-system/scripts/memory_cli.py feature "User authentication redesign"
+```
+
+Or use setup.py directly after install:
+```bash
+python ~/.ai-memory-system/setup.py --feature "User authentication redesign"
+```
+
+Output:
+```
+[memory] created feature 'User authentication redesign' at .ai-memory/docs/02-feature/FEAT_001_user-authentication-redesign
+```
+
+**Start a fix:**
+```bash
+python ~/.ai-memory-system/scripts/memory_cli.py fix "Login timeout bug"
+```
+
+Output:
+```
+[memory] created fix 'Login timeout bug' at .ai-memory/docs/02-feature/FIX_001_login-timeout-bug
+```
+
+**What gets created:**
+
+Each feature or fix folder contains 5 template files:
+```
+.ai-memory/docs/02-feature/
+├── FEAT_001_user-authentication-redesign/
+│   ├── feature.md          # Feature description and acceptance criteria
+│   ├── plan.md             # Implementation plan (includes project context)
+│   ├── scratch.md          # Working notes (for you)
+│   ├── test.md             # Test cases and coverage
+│   └── dod.md              # Definition of done checklist
+└── FIX_001_login-timeout-bug/
+    ├── feature.md          # (same as above, but for fixes)
+    ├── plan.md
+    ├── scratch.md
+    ├── test.md
+    └── dod.md
+```
+
+**Key details:**
+
+- **Folder naming:** `FEAT_NNN_slug` or `FIX_NNN_slug` — numbers auto-increment, slug is derived from the feature name
+- **feature.md** is pre-filled with your feature/fix name
+- **plan.md** automatically includes a "Context" section with recent project decisions and patterns — you don't have to write them
+- **dod.md** is a shared template covering code quality, documentation, testing, and deployment
+- **Counter auto-increments:** The next feature will be `FEAT_002`, next fix will be `FIX_002`, etc.
+
+**Using the files:**
+
+```bash
+# Open your feature folder
+cd .ai-memory/docs/02-feature/FEAT_001_user-authentication-redesign
+
+# Edit as you work
+code feature.md plan.md scratch.md test.md dod.md
+
+# Commit your feature folder when you're done
+git add .ai-memory/docs/02-feature/FEAT_001_user-authentication-redesign/
+git commit -m "feat(auth): complete user authentication redesign — see FEAT_001 for details"
+```
+
 ### CLI commands (when you need them)
 
 ```bash
 # Run from any directory inside your project
 python ~/.ai-memory-system/scripts/memory_cli.py <command>
 
+feature "<name>"        # Create a new feature folder with templates
+fix "<name>"            # Create a new fix folder with templates
 sync                    # Manually regenerate CONTEXT.md
 status                  # Show all projects and entry counts
 query "auth decisions"  # Search memory for anything
 backfill                # Re-import git history (if hooks weren't installed earlier)
 review                  # Run pre-push review manually
+
+# Setup flags for feature/fix templates
+python ~/.ai-memory-system/setup.py --feature "My new feature"
+python ~/.ai-memory-system/setup.py --fix "My bug fix"
 ```
 
 ---
