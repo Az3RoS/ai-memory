@@ -7,6 +7,7 @@ Usage:
     python setup.py --rebuild        # Wipe local DB and reimport from git history
     python setup.py --repo /path     # Install in specific repo
     python setup.py --project slug   # Override project slug (default: repo dir name)
+    python setup.py --reinstall-hooks   # Reinstall git hooks only (skip full setup)
     python setup.py --feature "New feature name"    # Create a feature template after setup
     python setup.py --fix "Bug fix description"     # Create a fix template after setup
 
@@ -44,10 +45,12 @@ from db_wiki import DBWiki
 from wiki_gen import generate_wiki
 from feature_init import create_feature, create_fix
 from utils import slugify, estimate_tokens, read_json, write_json
-from sync import sync_to_repo
+from memory_sync import sync_to_repo
 from backfill import backfill
 from pointers import generate_pointers
+from memory_store import MemoryStore
 from detect import detect_all
+from memory_config import Config
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -130,7 +133,7 @@ def _copy_skills(mem_dir: Path, verbose: bool = True):
         print(f"  [ok] copied {copied} skill files to .ai-memory/docs/01-sdlc/")
 
 
-def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True):
+def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True, force: bool = False):
     """Install or update git hooks without touching .ai-memory/ content."""
     from memory_init import _install_hook, POST_COMMIT_HOOK, PRE_COMMIT_HOOK
     hooks_dir = repo_root / ".git" / "hooks"
@@ -139,11 +142,11 @@ def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True):
             print("  [~] .git/hooks not found - skipping hook install")
         return
 
-    memory_cli = str(SCRIPT_DIR / "memory_cli.py")
+    # Install post-commit and pre-commit with template-based formatting
     _install_hook(hooks_dir, "post-commit",
-                  POST_COMMIT_HOOK.format(memory_cli=memory_cli, project=project))
+                  POST_COMMIT_HOOK.format(project=project), force=force)
     _install_hook(hooks_dir, "pre-commit",
-                  PRE_COMMIT_HOOK.format(memory_cli=memory_cli, project=project))
+                  PRE_COMMIT_HOOK.format(project=project), force=force)
 
     # Install pre-push and post-merge hooks from hooks/ directory
     hooks_src = Path(__file__).parent / "hooks"
@@ -154,10 +157,9 @@ def _reinstall_hooks(repo_root: Path, project: str, verbose: bool = True):
                 hooks_dir,
                 hook_name,
                 hook_src.read_text(encoding="utf-8").replace(
-                    "{memory_cli}", memory_cli
-                ).replace(
                     "{project}", project
                 ),
+                force=force,
             )
 
     if verbose:
@@ -180,14 +182,30 @@ def main():
     parser.add_argument("--project", "-p", help="Project slug (default: repo dir name)")
     parser.add_argument("--feature", help="Create a new feature template after setup")
     parser.add_argument("--fix", help="Create a new fix template after setup")
+    parser.add_argument("--pointers", nargs="+", metavar="NAME",
+                        help="Only generate pointer files matching these names (e.g. copilot claude cursor)")
     parser.add_argument("--rebuild", action="store_true",
                         help="Wipe local memory.db entries for this project and reimport")
+    parser.add_argument("--reinstall-hooks", action="store_true",
+                        help="Reinstall git hooks only (skip full setup)")
     parser.add_argument("--quiet",   action="store_true", help="Suppress output")
     args = parser.parse_args()
 
     verbose = not args.quiet
     repo_root = Path(args.repo).resolve() if args.repo else Path.cwd()
     project = args.project or _slug_from_path(repo_root)
+
+    # ── Fast path: reinstall hooks only ────────────────────────────────────────
+    if args.reinstall_hooks:
+        if verbose:
+            _banner("Reinstalling git hooks")
+            print(f"  Repo:    {repo_root}")
+            print(f"  Project: {project}")
+            print()
+        _reinstall_hooks(repo_root, project, verbose=verbose, force=True)
+        if verbose:
+            print()
+        return
 
     if verbose:
         _banner("ai-memory setup")
@@ -240,7 +258,7 @@ def main():
         print(f"  [3/6] Generating IDE pointer files...")
 
     template_path = Path(__file__).parent / "templates" / "pointer.md.template"
-    written = generate_pointers(repo_root, template_path=template_path, verbose=verbose)
+    written = generate_pointers(repo_root, template_path=template_path, verbose=verbose, only=args.pointers)
 
     # ── Step 4: Create docs structure and copy skills ────────────────────
     if verbose:
@@ -252,7 +270,8 @@ def main():
 
     # ── Step 5: Backfill git history ──────────────────────────────────────────
     db_path = Path.home() / ".ai-memory" / "memory.db"
-    db = DBMemory(db_path)
+    store = MemoryStore(db_path)
+    db = DBMemory(db_path)  # Keep for backfill compatibility
 
     if verbose:
         print()
@@ -275,7 +294,8 @@ def main():
         print()
         print(f"  [6/6] Generating CONTEXT.md...")
 
-    sync_to_repo(db, project, mem_dir)
+    cfg = Config()
+    sync_to_repo(store, project, cfg)
 
     if verbose:
         print("  [ok] .ai-memory/CONTEXT.md generated")
@@ -336,6 +356,20 @@ def main():
         print("     git add .ai-wiki/")
         print("  3. Make a commit - hooks will auto-update CONTEXT.md")
         print("  4. Open your AI IDE - it will read .ai-memory/CONTEXT.md")
+        print("  5. Optional: Open .bashrc in your profile and add an alias for the memory CLI:")
+        print("     alias mem='path/to/python /path/to/ai-memory/scripts/memory_cli.py'")
+        print("     Then you can run commands like:")
+        print("     mem feature 'New feature name'")
+        print("  6. Create a new feature with project:")
+        print("     python scripts/memory_cli.py init --project 'Project name'")
+        print("  7. Create a new feature with context:")
+        print("     python scripts/memory_cli.py feature 'Feature name'")
+        print("  8. Create a bug fix with context:")
+        print("     python scripts/memory_cli.py fix 'Bug description'")
+        print("  9. Query memory (search project history):")
+        print("     python scripts/memory_cli.py query 'search term'")
+        print(" 10. Reinstall hooks (if they break):")
+        print("     python setup.py --reinstall-hooks")
         print()
 
 

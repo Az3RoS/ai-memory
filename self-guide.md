@@ -64,15 +64,22 @@ git clone https://github.com/Az3RoS/ai-memory ~/.ai-memory-system
 ```bash
 cd /path/to/your-project          # your project, not ai-memory
 
-python ~/.ai-memory-system/setup.py
+python ~/.ai-memory-system/setup.py  # all (unchanged default)
+```
+
+**Specific Usage**
+```bash
+python setup.py --pointers copilot          # only .github/copilot-instructions.md
+python setup.py --pointers claude cursor    # CLAUDE.md + .cursorrules
 ```
 
 **Windows:**
 ```cmd
 cd C:\Projects\your-project
 
-C:\Python311\python.exe C:\Users\YourName\.ai-memory-system\setup.py
+C:\Python311\python.exe C:\Users\YourName\.ai-memory-system\setup.py --pointers copilot
 ```
+
 
 This takes 10–30 seconds. You will see output like:
 ```

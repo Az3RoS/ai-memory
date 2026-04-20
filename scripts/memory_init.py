@@ -37,12 +37,14 @@ POST_COMMIT_HOOK = """\
 # Installed by: memory_cli.py init
 set -e
 
-MEMORY_CLI="{memory_cli}"
-PROJECT="{project}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+PYTHON="$(command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python)"
+PROJECT="$("$PYTHON" -c "import json; print(json.load(open('$REPO_ROOT/.ai-memory/index.json'))['slug'])" 2>/dev/null || echo "{project}")"
 
 # Ingest commit silently (failures don't block git)
-python3 "$MEMORY_CLI" ingest --project "$PROJECT" || true
-python3 "$MEMORY_CLI" log    --project "$PROJECT" || true
+"$PYTHON" "$MEMORY_CLI" ingest --project "$PROJECT" || true
+"$PYTHON" "$MEMORY_CLI" log    --project "$PROJECT" || true
 """
 
 PRE_COMMIT_HOOK = """\
@@ -51,11 +53,13 @@ PRE_COMMIT_HOOK = """\
 # Installed by: memory_cli.py init
 set -e
 
-MEMORY_CLI="{memory_cli}"
-PROJECT="{project}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+PYTHON="$(command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python)"
+PROJECT="$("$PYTHON" -c "import json; print(json.load(open('$REPO_ROOT/.ai-memory/index.json'))['slug'])" 2>/dev/null || echo "{project}")"
 
 # Refresh CONTEXT.md so it's always committed with latest context
-python3 "$MEMORY_CLI" sync --project "$PROJECT" || true
+"$PYTHON" "$MEMORY_CLI" sync --project "$PROJECT" || true
 
 # Stage the updated files if they changed
 if git diff --quiet .ai-memory/ 2>/dev/null; then
@@ -101,15 +105,29 @@ def _patch_gitignore(repo_path: Path):
 
 # ── Hook installer ────────────────────────────────────────────────────────────
 
-def _install_hook(hooks_dir: Path, name: str, content: str):
+def _install_hook(hooks_dir: Path, name: str, content: str, force: bool = False):
     hook_path = hooks_dir / name
     if hook_path.exists():
         existing = hook_path.read_text(encoding="utf-8")
         if "ai-memory" in existing:
-            return  # already installed
-        # Append to existing hook
-        separator = "\n\n# --- ai-memory ---\n"
-        hook_path.write_text(existing.rstrip() + separator + content, encoding="utf-8")
+            if not force:
+                return  # already installed, no force
+            # Force overwrite: replace the ai-memory block (or the whole file if it's ours)
+            if existing.strip().startswith("#!/bin/sh") and "ai-memory" in existing.splitlines()[1]:
+                # Entire file is our hook — overwrite
+                hook_path.write_text(content, encoding="utf-8")
+            else:
+                # Composite hook — replace the ai-memory section
+                marker = "# --- ai-memory ---"
+                if marker in existing:
+                    pre = existing[:existing.index(marker)].rstrip()
+                    hook_path.write_text(pre + "\n\n" + marker + "\n" + content, encoding="utf-8")
+                else:
+                    hook_path.write_text(existing.rstrip() + f"\n\n# --- ai-memory ---\n{content}", encoding="utf-8")
+        else:
+            # Append to existing non-ai-memory hook
+            separator = "\n\n# --- ai-memory ---\n"
+            hook_path.write_text(existing.rstrip() + separator + content, encoding="utf-8")
     else:
         hook_path.write_text(content, encoding="utf-8")
 
@@ -159,15 +177,14 @@ def init_project(cfg: Config, slug: str, repo_path: str):
 
     # 6. Install git hooks
     hooks_dir = repo / ".git" / "hooks"
-    memory_cli = str(Path(__file__).parent / "memory_cli.py")
     if hooks_dir.exists():
         _install_hook(
             hooks_dir, "post-commit",
-            POST_COMMIT_HOOK.format(memory_cli=memory_cli, project=slug),
+            POST_COMMIT_HOOK.format(project=slug),
         )
         _install_hook(
             hooks_dir, "pre-commit",
-            PRE_COMMIT_HOOK.format(memory_cli=memory_cli, project=slug),
+            PRE_COMMIT_HOOK.format(project=slug),
         )
         # Install pre-push and post-merge if templates exist
         hooks_src = Path(__file__).parent.parent / "hooks"
@@ -177,8 +194,8 @@ def init_project(cfg: Config, slug: str, repo_path: str):
                 _install_hook(
                     hooks_dir, hook_name,
                     hook_src.read_text(encoding="utf-8").replace(
-                        "{memory_cli}", memory_cli
-                    ).replace("{project}", slug),
+                        "{project}", slug
+                    ),
                 )
     else:
         print(f"  [warn] .git/hooks not found at {hooks_dir} - hooks not installed")
@@ -255,4 +272,3 @@ def init_project(cfg: Config, slug: str, repo_path: str):
     if hooks_dir.exists():
         print("  [ok] git hooks installed")
     print("  [ok] IDE pointer files generated")
-    # This file is being deleted as it is obsolete.

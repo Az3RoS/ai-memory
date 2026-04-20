@@ -93,20 +93,35 @@ def _should_write(path: Path) -> bool:
 
 # ── Public API ─────────────────────────────────────────────────────────────────
 
+def _matches_filter(ide_name: str, only: list[str]) -> bool:
+    """Return True if ide_name matches any term in only (case-insensitive substring)."""
+    lower = ide_name.lower()
+    return any(term.lower() in lower for term in only)
+
+
 def generate_pointers(
     repo_root: Path,
     template_path: Optional[Path] = None,
     verbose: bool = True,
+    only: Optional[list[str]] = None,
 ) -> list[str]:
     """
-    Generate all IDE pointer files in repo_root.
+    Generate IDE pointer files in repo_root.
+    only: if provided, only write targets whose description matches any term.
     Returns list of relative paths that were written.
     """
     template_body = _load_template(template_path)
     written = []
     skipped = []
 
-    for rel_path, preamble, ide_name in POINTER_TARGETS:
+    targets = POINTER_TARGETS
+    if only:
+        targets = [t for t in POINTER_TARGETS if _matches_filter(t[2], only)]
+        if verbose and not targets:
+            names = ", ".join(t[2] for t in POINTER_TARGETS)
+            print(f"  [!] no pointer targets matched {only}. Available: {names}")
+
+    for rel_path, preamble, ide_name in targets:
         target = repo_root / rel_path
         target.parent.mkdir(parents=True, exist_ok=True)
 

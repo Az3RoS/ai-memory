@@ -1,40 +1,19 @@
 #!/bin/sh
-# ai-memory pre-commit hook
-# Calls utils.py timestamp-scratch
-
-python3 scripts/utils.py timestamp-scratch 2>/dev/null || true
-
-set -e
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-#!/bin/sh
-# ============================================================
-# ai-memory — pre-commit hook
-# ============================================================
-# Regenerates CONTEXT.md and stages it before each commit,
-# so the memory context is always up-to-date in the repo.
-# ============================================================
+# ai-memory pre-commit hook — updates CONTEXT.md before each commit
+# Installed by: memory_cli.py init
 set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+PYTHON="$(command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python)"
+PROJECT="$("$PYTHON" -c "import json,sys; d=json.load(open('$REPO_ROOT/.ai-memory/index.json')); print(d['slug'])" 2>/dev/null || echo "{project}")"
 
-if [ ! -f "$MEMORY_CLI" ]; then
-  MEMORY_CLI="$HOME/.ai-memory/scripts/memory_cli.py"
-fi
+# Refresh CONTEXT.md so it's always committed with latest context
+"$PYTHON" "$MEMORY_CLI" sync --project "$PROJECT" || true
 
-PROJECT=""
-
-# Use py launcher on Windows, fall back to python3 on Unix
-PY="$(command -v py 2>/dev/null || command -v python3 2>/dev/null || echo python3)"
-
-# Regenerate CONTEXT.md — silent failure
-"$PY" "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
-
-# Stage ai-memory files if they changed
-if [ -d "$REPO_ROOT/.ai-memory" ]; then
-  git add \
-    "$REPO_ROOT/.ai-memory/CONTEXT.md" \
-    "$REPO_ROOT/.ai-memory/decisions.md" \
-    "$REPO_ROOT/.ai-memory/index.json" \
-    2>/dev/null || true
+# Stage the updated files if they changed
+if git diff --quiet .ai-memory/ 2>/dev/null; then
+  :
+else
+  git add .ai-memory/CONTEXT.md .ai-memory/decisions.md .ai-memory/index.json 2>/dev/null || true
 fi

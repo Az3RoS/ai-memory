@@ -3,10 +3,12 @@
 # Installed by: setup.py
 # Silent — never interferes with git operations
 
-MEMORY_CLI="{memory_cli}"
-PROJECT="{project}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+PYTHON="$(command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python)"
+PROJECT="$("$PYTHON" -c "import json,sys; d=json.load(open('$REPO_ROOT/.ai-memory/index.json')); print(d['slug'])" 2>/dev/null || echo "{project}")"
 
 # Refresh CONTEXT.md to incorporate pulled decisions/patterns
-python3 "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
+"$PYTHON" "$MEMORY_CLI" sync --project "$PROJECT" 2>/dev/null || true
 
 exit 0

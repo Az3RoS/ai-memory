@@ -3,14 +3,16 @@
 # Installed by: setup.py
 # NEVER blocks the push — all operations use || true
 
-MEMORY_CLI="{memory_cli}"
-PROJECT="{project}"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+MEMORY_CLI="$REPO_ROOT/scripts/memory_cli.py"
+PYTHON="$(command -v python 2>/dev/null || command -v python3 2>/dev/null || echo python)"
+PROJECT="$("$PYTHON" -c "import json,sys; d=json.load(open('$REPO_ROOT/.ai-memory/index.json')); print(d['slug'])" 2>/dev/null || echo "{project}")"
 
 # Run pre-push review (prints advisory to terminal)
-python3 "$MEMORY_CLI" review --project "$PROJECT" 2>/dev/null || true
+"$PYTHON" "$MEMORY_CLI" review --project "$PROJECT" 2>/dev/null || true
 
 # Generate PR description
-python3 "$MEMORY_CLI" pr-context --project "$PROJECT" 2>/dev/null || true
+"$PYTHON" "$MEMORY_CLI" pr-context --project "$PROJECT" 2>/dev/null || true
 
 # Exit 0 always — never block the push
 exit 0
