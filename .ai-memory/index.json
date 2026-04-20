@@ -1,0 +1,13 @@
+{
+  "slug": "ai-memory",
+  "entry_count": 4,
+  "last_sync": "2026-04-20",
+  "token_budget": 1500,
+  "recent_summaries": [
+    "hook fix and instruction update for setup",
+    "hook fix and instruction update for setup",
+    "wiki features",
+    "wiki features"
+  ],
+  "global_db": "C:\\Users\\arnab\\.ai-memory\\memory.db"
+}

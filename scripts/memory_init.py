@@ -61,10 +61,8 @@ PROJECT="$("$PYTHON" -c "import json; print(json.load(open('$REPO_ROOT/.ai-memor
 # Refresh CONTEXT.md so it's always committed with latest context
 "$PYTHON" "$MEMORY_CLI" sync --project "$PROJECT" || true
 
-# Stage the updated files if they changed
-if git diff --quiet .ai-memory/ 2>/dev/null; then
-  :
-else
+# Stage the updated files (handles both tracked changes and untracked new files)
+if [ -n "$(git status --porcelain .ai-memory/ 2>/dev/null)" ]; then
   git add .ai-memory/CONTEXT.md .ai-memory/decisions.md .ai-memory/index.json 2>/dev/null || true
 fi
 """
